@@ -1,38 +1,62 @@
-const { feishuRequest } = require('./auth');
+const axios = require('axios');
+const { getTenantToken } = require('./auth');
 const { getUserIdByName } = require('./bitable');
 const logger = require('../../utils/logger');
 
+const FEISHU_BASE = 'https://open.feishu.cn/open-apis';
+
 /**
  * 发送文本消息给指定 user_id
- * @param {string} userId - 飞书 user_id
- * @param {string} text
  */
 async function sendText(userId, text) {
-  await feishuRequest('POST', '/im/v1/messages?receive_id_type=user_id', {
-    receive_id: userId,
-    msg_type: 'text',
-    content: JSON.stringify({ text }),
-  });
+  const token = await getTenantToken();
+  const res = await axios.post(
+    `${FEISHU_BASE}/im/v1/messages`,
+    {
+      receive_id: userId,
+      msg_type: 'text',
+      content: JSON.stringify({ text }),
+    },
+    {
+      params: { receive_id_type: 'user_id' },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  if (res.data.code !== 0) {
+    throw new Error(`飞书发消息失败: code=${res.data.code} msg=${res.data.msg}`);
+  }
 }
 
 /**
  * 发送消息卡片给指定 user_id
- * @param {string} userId
- * @param {object} card
  */
 async function sendCard(userId, card) {
-  await feishuRequest('POST', '/im/v1/messages?receive_id_type=user_id', {
-    receive_id: userId,
-    msg_type: 'interactive',
-    content: JSON.stringify(card),
-  });
+  const token = await getTenantToken();
+  const res = await axios.post(
+    `${FEISHU_BASE}/im/v1/messages`,
+    {
+      receive_id: userId,
+      msg_type: 'interactive',
+      content: JSON.stringify(card),
+    },
+    {
+      params: { receive_id_type: 'user_id' },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  if (res.data.code !== 0) {
+    throw new Error(`飞书发卡片失败: code=${res.data.code} msg=${res.data.msg}`);
+  }
 }
 
 /**
- * 通过姓名查找 user_id 后发送消息
- * 找不到时打印警告但不抛出错误，避免通知失败阻断主流程
- * @param {string} name - 飞书姓名
- * @param {string} text
+ * 通过姓名查 user_id 后发消息
  */
 async function sendTextByName(name, text) {
   try {
@@ -48,7 +72,6 @@ async function sendTextByName(name, text) {
 }
 
 // ─── 预置消息模板 ────────────────────────────────
-// 接收方统一用 name（姓名），内部自动查 user_id
 
 function notifyNewPlan(name, seq, skuList) {
   const skuLines = skuList.map(s => `• ${s.msku}  数量：${s.shipment_plan_quantity}`).join('\n');
