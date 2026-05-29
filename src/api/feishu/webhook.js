@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { getTenantToken } = require('./auth');
-const { getUserIdByName } = require('./bitable');
+const { getOpenIdByName } = require('./bitable');
 const logger = require('../../utils/logger');
 
 const FEISHU_BASE = 'https://open.feishu.cn/open-apis';
@@ -8,17 +8,17 @@ const FEISHU_BASE = 'https://open.feishu.cn/open-apis';
 /**
  * 发送文本消息给指定 user_id
  */
-async function sendText(userId, text) {
+async function sendText(openId, text) {
   const token = await getTenantToken();
   const res = await axios.post(
     `${FEISHU_BASE}/im/v1/messages`,
     {
-      receive_id: userId,
+      receive_id: openId,
       msg_type: 'text',
       content: JSON.stringify({ text }),
     },
     {
-      params: { receive_id_type: 'user_id' },
+      params: { receive_id_type: 'open_id' },
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -31,19 +31,19 @@ async function sendText(userId, text) {
 }
 
 /**
- * 发送消息卡片给指定 user_id
+ * 发送消息卡片给指定 open_id
  */
-async function sendCard(userId, card) {
+async function sendCard(openId, card) {
   const token = await getTenantToken();
   const res = await axios.post(
     `${FEISHU_BASE}/im/v1/messages`,
     {
-      receive_id: userId,
+      receive_id: openId,
       msg_type: 'interactive',
       content: JSON.stringify(card),
     },
     {
-      params: { receive_id_type: 'user_id' },
+      params: { receive_id_type: 'open_id' },
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -56,16 +56,16 @@ async function sendCard(userId, card) {
 }
 
 /**
- * 通过姓名查 user_id 后发消息
+ * 通过姓名查 open_id 后发消息
  */
 async function sendTextByName(name, text) {
   try {
-    const userId = await getUserIdByName(name);
-    if (!userId) {
-      logger.warn('', `找不到用户 ${name} 的 user_id，消息未发送`);
+    const openId = await getOpenIdByName(name);
+    if (!openId) {
+      logger.warn('', `找不到用户 ${name} 的 open_id，消息未发送`);
       return;
     }
-    await sendText(userId, text);
+    await sendText(openId, text);
   } catch (err) {
     logger.warn('', `飞书消息发送失败（${name}）`, { error: err.message });
   }
