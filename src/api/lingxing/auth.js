@@ -79,7 +79,7 @@ async function getToken() {
         `appId=${encodeURIComponent(config.lingxing.appKey)}&refreshToken=${encodeURIComponent(_refreshToken)}`,
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
-      if (res.data.code === 200) {
+      if (res.data.code === 200 || res.data.code === '200') {
         _token = res.data.data.access_token;
         _refreshToken = res.data.data.refresh_token;
         _tokenExpiry = Date.now() + res.data.data.expires_in * 1000;
@@ -94,8 +94,8 @@ async function getToken() {
     `appId=${encodeURIComponent(config.lingxing.appKey)}&appSecret=${encodeURIComponent(config.lingxing.appSecret)}`,
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   );
-  if (res.data.code !== 200) {
-    throw new Error(`Token获取失败: code=${res.data.code} msg=${res.data.message || res.data.msg}`);
+  if (res.data.code !== 200 && res.data.code !== '200') {
+    throw new Error(`Token获取失败: code=${res.data.code} msg=${res.data.msg}`);
   }
   _token = res.data.data.access_token;
   _refreshToken = res.data.data.refresh_token;
