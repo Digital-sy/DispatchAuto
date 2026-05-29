@@ -2,6 +2,7 @@ const { poll } = require('../utils/poller');
 const { listShipmentPlans } = require('../api/lingxing/shipment_plan');
 const { createReadySendOrder, pollCreateResult } = require('../api/lingxing/shipment_order');
 const { syncShipmentToERP } = require('../api/lingxing/sta');
+const { getStoreBySid, DEFAULT_SHIPPING_WID } = require('../config/stores');
 const config = require('../config');
 const logger = require('../utils/logger');
 
@@ -37,10 +38,11 @@ async function run(seq, { staTaskId }) {
 
   // 提取货件信息，构建发货单参数
   const items = planWithShipment.list || [];
-  const list = items.flatMap(item =>
-    (item.mws_relate || []).map(rel => ({
-      seller_id: String(item.sid),
-      marketplace_id: '', // 需从店铺信息补充
+  const list = items.flatMap(item => {
+    const store = getStoreBySid(item.sid);
+    return (item.mws_relate || []).map(rel => ({
+      seller_id: store?.seller_id || String(item.sid),
+      marketplace_id: store?.marketplace_id || '',
       shipment_id: rel.shipment_mws_sn,
       fulfillment_network_sku: item.fnsku,
       fnsku: item.fnsku,
@@ -52,15 +54,15 @@ async function run(seq, { staTaskId }) {
       cg_box_height: item.cg_box_height,
       cg_box_weight: item.cg_box_weight,
       quantity_in_case: item.quantity_in_case,
-    }))
-  );
+    }));
+  });
 
   const shipmentIds = [...new Set(list.map(i => i.shipment_id))];
 
   logger.info(seq, '生成发货单', { shipmentIds });
   const requestFlag = `dispatchauto_${seq}_${Date.now()}`;
   await createReadySendOrder({
-    sys_wid: items[0]?.wid,
+    sys_wid: items[0]?.wid || DEFAULT_SHIPPING_WID,
     box_type: 'SINGLE',
     list,
     // box_list 按实际装箱数据补充
