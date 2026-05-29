@@ -24,7 +24,7 @@ async function getAllUsers() {
     const people = Array.isArray(field) ? field : [field];
     for (const person of people) {
       if (person?.id) {
-        users.push({ name: person.name || '', user_id: person.id });
+        users.push({ name: person.name || '', open_id: person.id });
       }
     }
   }
@@ -42,9 +42,9 @@ async function getAllUsers() {
  * 通过姓名查 user_id
  * @param {string} name
  */
-async function getUserIdByName(name) {
+async function getOpenIdByName(name) {
   const users = await getAllUsers();
-  return users.find(u => u.name === name)?.user_id || null;
+  return users.find(u => u.name === name)?.open_id || null;
 }
 
-module.exports = { getAllUsers, getUserIdByName };
+module.exports = { getAllUsers, getOpenIdByName };
