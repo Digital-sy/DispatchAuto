@@ -1,4 +1,4 @@
-const { getInventory } = require('../api/lingxing/inventory');
+const { getAvailableQty } = require('../api/lingxing/inventory');
 const logger = require('../utils/logger');
 
 /**
@@ -10,11 +10,8 @@ async function run(plan) {
   const shortItems = [];
 
   for (const item of skuList) {
-    const inventoryList = await getInventory(item.sku, item.wid);
-    const inv = inventoryList.find(i => i.sku === item.sku);
-    const availQty = inv?.product_valid_num || 0;
-
-    logger.info(seq, `库存校验`, { sku: item.sku, planQty: item.shipment_plan_quantity, availQty });
+    const availQty = await getAvailableQty(item.sku, item.wid);
+    logger.info(seq, '库存校验', { sku: item.sku, planQty: item.shipment_plan_quantity, availQty });
 
     if (availQty < item.shipment_plan_quantity) {
       shortItems.push({
