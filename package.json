@@ -1,0 +1,18 @@
+{
+  "name": "dispatchauto",
+  "version": "1.0.0",
+  "description": "FBA 发货流程全自动化系统",
+  "main": "src/workflow/index.js",
+  "scripts": {
+    "start": "node src/workflow/index.js",
+    "dev": "node --watch src/workflow/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

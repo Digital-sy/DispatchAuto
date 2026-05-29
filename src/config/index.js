@@ -1,0 +1,22 @@
+require('dotenv').config();
+
+module.exports = {
+  lingxing: {
+    appKey: process.env.LINGXING_APP_KEY,
+    appSecret: process.env.LINGXING_APP_SECRET,
+    baseUrl: process.env.LINGXING_BASE_URL || 'https://openapi.lingxing.com',
+  },
+  feishu: {
+    webhookUrl: process.env.FEISHU_WEBHOOK_URL,
+  },
+  warehouse: {
+    defaultWid: process.env.DEFAULT_WID,
+  },
+  poll: {
+    intervalCron: process.env.POLL_INTERVAL_CRON || '*/5 * * * *',
+    packingWaitTimeoutH: parseInt(process.env.PACKING_WAIT_TIMEOUT_H || '24'),
+    planConfirmTimeoutH: parseInt(process.env.PLAN_CONFIRM_TIMEOUT_H || '2'),
+    shipmentSyncRetry: parseInt(process.env.SHIPMENT_SYNC_RETRY || '10'),
+    shipmentSyncIntervalS: parseInt(process.env.SHIPMENT_SYNC_INTERVAL_S || '60'),
+  },
+};
