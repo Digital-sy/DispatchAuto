@@ -7,10 +7,12 @@ module.exports = {
     baseUrl: process.env.LINGXING_BASE_URL || 'https://openapi.lingxing.com',
   },
   feishu: {
-    webhookUrl: process.env.FEISHU_WEBHOOK_URL,
+    testMode: process.env.TEST_MODE === 'true',
+    testReceiver: process.env.TEST_RECEIVER || '刘宗霖',
+    notifyWarehouseName: process.env.NOTIFY_WAREHOUSE_NAME || '',
   },
   warehouse: {
-    defaultWid: process.env.DEFAULT_WID,
+    defaultWid: process.env.DEFAULT_WID || '10518',
   },
   poll: {
     intervalCron: process.env.POLL_INTERVAL_CRON || '*/5 * * * *',
