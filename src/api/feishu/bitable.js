@@ -1,45 +1,62 @@
-const { feishuRequest } = require('./auth');
+const axios = require('axios');
+const { getTenantToken } = require('./auth');
 
 const APP_TOKEN = 'QYQTb0gWxaRAARsTpMYcvzxAnjh';
 const TABLE_ID = 'tbl6IdXqiWv8Veoq';
 const FIELD_NAME = '人员';
+const FEISHU_BASE = 'https://open.feishu.cn/open-apis';
 
 /**
- * 从多维表查询所有人员的 user_id
- * 多维表"人员"字段返回结构：[{ id, name, avatar_url, ... }]
- * @returns {Array<{ name: string, user_id: string }>}
+ * 从多维表拉取所有记录（自动分页）
+ * 人员字段结构：[{ id: 'ou_xxx', name: '张三', ... }]
+ * @returns {Array<{ name: string, open_id: string }>}
  */
 async function getAllUsers() {
-  const res = await feishuRequest(
-    'GET',
-    `/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records?page_size=100`
-  );
-  const records = res.data?.items || [];
   const users = [];
+  const seen = new Set();
+  let pageToken = null;
 
-  for (const record of records) {
-    const field = record.fields?.[FIELD_NAME];
-    if (!field) continue;
-    // 人员字段是数组
-    const people = Array.isArray(field) ? field : [field];
-    for (const person of people) {
-      if (person?.id) {
-        users.push({ name: person.name || '', open_id: person.id });
+  while (true) {
+    const token = await getTenantToken();
+    const params = { page_size: 100 };
+    if (pageToken) params.page_token = pageToken;
+
+    const res = await axios.get(
+      `${FEISHU_BASE}/bitable/v1/apps/${APP_TOKEN}/tables/${TABLE_ID}/records`,
+      {
+        params,
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (res.data.code !== 0) {
+      throw new Error(`读取多维表失败: ${res.data.msg}`);
+    }
+
+    const data = res.data.data || {};
+    const records = data.items || [];
+
+    for (const record of records) {
+      const field = record.fields?.[FIELD_NAME];
+      if (!field) continue;
+      const people = Array.isArray(field) ? field : [field];
+      for (const person of people) {
+        if (person?.id && person?.name && !seen.has(person.id)) {
+          seen.add(person.id);
+          users.push({ name: person.name, open_id: person.id });
+        }
       }
     }
+
+    if (!data.has_more) break;
+    pageToken = data.page_token;
   }
 
-  // 去重（同一人可能出现在多条记录）
-  const seen = new Set();
-  return users.filter(u => {
-    if (seen.has(u.user_id)) return false;
-    seen.add(u.user_id);
-    return true;
-  });
+  return users;
 }
 
 /**
- * 通过姓名查 user_id
+ * 通过姓名查 open_id
  * @param {string} name
  */
 async function getOpenIdByName(name) {
